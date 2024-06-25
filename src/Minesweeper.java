@@ -3,15 +3,21 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 
 public class Minesweeper {
     private static final int CELL_SIZE = 30;
+    private static final double EASY_MINE_PERCENTAGE = 0.1;
+    private static final double MEDIUM_MINE_PERCENTAGE = 0.15;
+    private static final double HARD_MINE_PERCENTAGE = 0.2;
+    private static final String SCORE_FILE = System.getProperty("user.home") + File.separator + "scores.dat";
+
     private int size;
     private int mines;
     private int lives = 3;
     private int timeLimit;
-
     private JButton[][] buttons;
     private Cell[][] cells;
     private boolean[][] revealed;
@@ -21,11 +27,13 @@ public class Minesweeper {
     private JLabel timerLabel;
     private JLabel livesLabel;
     private JFrame gameFrame;
+    private String playerName;
 
-    public Minesweeper(int size, int mines, int timeLimit) {
+    public Minesweeper(int size, int mines, int timeLimit, String playerName) {
         this.size = size;
         this.mines = mines;
         this.timeLimit = timeLimit;
+        this.playerName = playerName;
 
         gameFrame = new JFrame("Minesweeper");
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -173,6 +181,8 @@ public class Minesweeper {
 
     private void gameOver() {
         timer.stop();
+        revealAllMines();
+        saveScore();
         Object[] options = {"Return to Menu", "Restart"};
         int choice = JOptionPane.showOptionDialog(gameFrame,
                 "Game Over! You have no lives left. What do you want to do?",
@@ -185,14 +195,15 @@ public class Minesweeper {
         if (choice == JOptionPane.YES_OPTION) {
             gameFrame.dispose();
             showMenu();
-        } else {
+        } else if (choice == JOptionPane.NO_OPTION) {
             gameFrame.dispose();
-            showMenu();
+            new Minesweeper(size, mines, timeLimit, playerName);
         }
     }
 
     private void gameWon() {
         timer.stop();
+        saveScore();
         Object[] options = {"Return to Menu", "Restart"};
         int choice = JOptionPane.showOptionDialog(gameFrame,
                 "Congratulations! You won! What do you want to do?",
@@ -205,9 +216,9 @@ public class Minesweeper {
         if (choice == JOptionPane.YES_OPTION) {
             gameFrame.dispose();
             showMenu();
-        } else {
+        } else if (choice == JOptionPane.NO_OPTION) {
             gameFrame.dispose();
-            showMenu();
+            new Minesweeper(size, mines, timeLimit, playerName);
         }
     }
 
@@ -223,10 +234,43 @@ public class Minesweeper {
         timer.start();
     }
 
+    private void revealAllMines() {
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                if (cells[i][j].isMine()) {
+                    cells[i][j].reveal(buttons[i][j]);
+                }
+            }
+        }
+    }
+
+    private void saveScore() {
+        int points = (timeLimit - timeElapsed) * lives;
+        List<Score> scores = loadScores();
+        scores.add(new Score(playerName, points));
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SCORE_FILE))) {
+            oos.writeObject(scores);
+        } catch (IOException e) {  e.printStackTrace();
+        }
+    }
+
+    private static List<Score> loadScores() {
+        List<Score> scores = new ArrayList<>();
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(SCORE_FILE))) {
+            scores = (List<Score>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+        return scores;
+    }
+
     private static void showMenu() {
         JFrame menuFrame = new JFrame("Minesweeper Menu");
         menuFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        menuFrame.setLayout(new GridLayout(4, 2));
+        menuFrame.setLayout(new GridLayout(6, 2));
+
+        JLabel nameLabel = new JLabel("Enter your name:");
+        JTextField nameField = new JTextField();
 
         JLabel sizeLabel = new JLabel("Select size:");
         JComboBox<String> sizeComboBox = new JComboBox<>(new String[]{"Small", "Medium", "Large"});
@@ -239,9 +283,15 @@ public class Minesweeper {
 
         JButton startButton = new JButton("Start Game");
         startButton.addActionListener(e -> {
+            String playerName = nameField.getText().trim();
             String selectedSize = (String) sizeComboBox.getSelectedItem();
             String selectedDifficulty = (String) difficultyComboBox.getSelectedItem();
             int selectedTimeLimit = (int) timeLimitComboBox.getSelectedItem();
+
+            if (playerName.isEmpty()) {
+                JOptionPane.showMessageDialog(menuFrame, "Please enter your name.");
+                return;
+            }
 
             int size = 0;
             int mines = 0;
@@ -261,81 +311,119 @@ public class Minesweeper {
 
             switch (selectedDifficulty) {
                 case "Easy":
-                    mines = (int) (size * size * 0.1); // 10% of the grid are mines
+                    mines = (int) (size * size * EASY_MINE_PERCENTAGE);
                     timeLimit = selectedTimeLimit;
                     break;
                 case "Medium":
-                    mines = (int) (size * size * 0.15); // 15% of the grid are mines
-                    timeLimit = (int) (selectedTimeLimit * 0.75); // Reduce time limit for medium difficulty
+                    mines = (int) (size * size * MEDIUM_MINE_PERCENTAGE);
+                    timeLimit = (int) (selectedTimeLimit * 0.75);
                     break;
                 case "Hard":
-                    mines = (int) (size * size * 0.2); // 20% of the grid are mines
-                    timeLimit = (int) (selectedTimeLimit * 0.5); // Reduce time limit for hard difficulty
+                    mines = (int) (size * size * HARD_MINE_PERCENTAGE);
+                    timeLimit = (int) (selectedTimeLimit * 0.5);
                     break;
             }
 
             menuFrame.dispose();
-            new Minesweeper(size, mines, timeLimit);
+            new Minesweeper(size, mines, timeLimit, playerName);
         });
 
+        JTextArea scoreArea = new JTextArea();
+        scoreArea.setEditable(false);
+        JScrollPane scoreScrollPane = new JScrollPane(scoreArea);
+        scoreScrollPane.setBorder(BorderFactory.createTitledBorder("High Scores"));
+        List<Score> scores = loadScores();
+        scores.sort((s1, s2) -> Integer.compare(s2.points, s1.points)); // Sort by points descending
+        for (Score score : scores) {
+            scoreArea.append(score.toString() + "\n");
+        }
+
+        menuFrame.add(nameLabel);
+        menuFrame.add(nameField);
         menuFrame.add(sizeLabel);
         menuFrame.add(sizeComboBox);
         menuFrame.add(difficultyLabel);
         menuFrame.add(difficultyComboBox);
         menuFrame.add(timeLimitLabel);
         menuFrame.add(timeLimitComboBox);
-        menuFrame.add(new JLabel()); // Empty label for layout
+        menuFrame.add(new JLabel());
         menuFrame.add(startButton);
+        menuFrame.add(scoreScrollPane); // Add the score display
 
         menuFrame.pack();
-        menuFrame.setLocationRelativeTo(null); // Center the window
+        menuFrame.setLocationRelativeTo(null);
         menuFrame.setVisible(true);
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(Minesweeper::showMenu);
+        showMenu();
     }
 }
 
-abstract class Cell implements Serializable {
-    abstract void reveal(JButton button);
-    abstract boolean isMine();
-}
+class Cell {
+    private boolean isMine;
+    private boolean isRevealed;
 
-class MineCell extends Cell {
-    @Override
-    void reveal(JButton button) {
-        button.setText("X"); // Show 'X' for bombs
-        button.setBackground(Color.RED);
+    public Cell(boolean isMine) {
+        this.isMine = isMine;
+        this.isRevealed = false;
     }
 
-    @Override
-    boolean isMine() {
-        return true;
+    public boolean isMine() {
+        return isMine;
+    }
+
+    public boolean isRevealed() {
+        return isRevealed;
+    }
+
+    public void reveal(JButton button) {
+        this.isRevealed = true;
+        if (isMine) {
+            button.setBackground(Color.RED);
+            button.setText("X");
+        }
     }
 }
 
 class SafeCell extends Cell {
     private int adjacentMines;
-    private boolean revealed;
 
-    void setAdjacentMines(int adjacentMines) {
+    public SafeCell() {
+        super(false);
+    }
+
+    public void setAdjacentMines(int adjacentMines) {
         this.adjacentMines = adjacentMines;
     }
 
     @Override
-    void reveal(JButton button) {
-        if (!revealed) {
-            revealed = true;
-            if (adjacentMines > 0) {
-                button.setText(String.valueOf(adjacentMines));
-            }
+    public void reveal(JButton button) {
+        super.reveal(button);
+        if (!isMine() && isRevealed()) {
             button.setBackground(Color.WHITE);
+            button.setText(adjacentMines > 0 ? Integer.toString(adjacentMines) : "");
         }
+    }
+}
+
+class MineCell extends Cell {
+    public MineCell() {
+        super(true);
+    }
+}
+
+class Score implements Serializable {
+    String playerName;
+    int points;
+
+    public Score(String playerName, int points) {
+        this.playerName = playerName;
+        this.points = points;
     }
 
     @Override
-    boolean isMine() {
-        return false;
+    public String toString() {
+        return playerName + ": " + points + " points";
     }
 }
