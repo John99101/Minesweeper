@@ -27,7 +27,7 @@ public class Minesweeper {
     private JLabel livesLabel; // Label für Leben initialisieren
     public static JFrame gameFrame; // gameFrame initialisieren(der Rahmen in dem die UI ist)
     private String playerName; // Spielername
-    private Board board;
+    private Board board; // Objekt von Board initialisieren
     
     public Minesweeper(int size, int mines, int timeLimit, String playerName) {  // Konstruktor
         this.size = size;
@@ -50,7 +50,7 @@ public class Minesweeper {
         
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new GridLayout(size, size)); // setzt das Spielfeld auf die Größe
-        buttons = new JButton[size][size]; 
+        buttons = new JButton[size][size];  
         cells = new Cell[size][size];
         revealed = new boolean[size][size];
         marked = new boolean[size][size];
@@ -58,13 +58,9 @@ public class Minesweeper {
         board.initializeBoard(gamePanel); // Initialize board with buttons
         board.placeMines(); // Place mines
         board.calculateNumbers(); // Calculate numbers for the cells
-        board.startTimer(timeLimit);
-        /*initializeBoard(gamePanel); // initialisieren den Spielfelds
-        placeMines(); // platzieren der Minen
-        calculateNumbers(); // Zählt wieviele Minen ans Feld angrenzen
-        startTimer(); // Timer starten*/
+        board.startTimer(timeLimit); // Timer starten
         gameFrame.add(gamePanel, BorderLayout.CENTER); 
-        gameFrame.setSize(new Dimension(800, 800));;
+        gameFrame.setSize(new Dimension(800, 800));
         gameFrame.setLocationRelativeTo(null); // Center the window
         gameFrame.setVisible(true);
     }
