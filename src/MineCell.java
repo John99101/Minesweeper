@@ -1,5 +1,5 @@
-class MineCell extends Cell {
-    public MineCell() {
-        super(true);
+class MineCell extends Cell { // MineCell erbt von Cell 
+    public MineCell() { // konstruktor
+        super(true); 
     }
 }
