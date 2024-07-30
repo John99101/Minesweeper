@@ -11,7 +11,7 @@ public class Minesweeper {
     private static final double EASY_MINE_PERCENTAGE = 0.1; // Prozentsatz wie viele Felder Minen sind bei Schwierigkeit easy
     private static final double MEDIUM_MINE_PERCENTAGE = 0.15; // Prozentsatz wie viele Felder Minen sind bei Schwierigkeit medium
     private static final double HARD_MINE_PERCENTAGE = 0.2; // Prozentsatz wie viele Felder Minen sind bei Schwierigkeit hard
-    private static final String SCORE_FILE = System.getProperty("user.home") + File.separator + "scores.dat"; // Pfad zur Scorefile(zum speichern der scores)
+    public static final String SCORE_FILE = System.getProperty("user.home") + File.separator + "scores.dat"; // Pfad zur Scorefile(zum speichern der scores)
 
     private int size; // Feldgröße
     private int mines; // Anzahl der Minen
@@ -25,9 +25,10 @@ public class Minesweeper {
     private int timeElapsed = 0; // wieviel Zeit vergangen ist in Sekunden
     private JLabel timerLabel; // Label für Timer initialisieren
     private JLabel livesLabel; // Label für Leben initialisieren
-    private JFrame gameFrame; // gameFrame initialisieren(der Rahmen in dem die UI ist)
+    public static JFrame gameFrame; // gameFrame initialisieren(der Rahmen in dem die UI ist)
     private String playerName; // Spielername
-
+    private Board board;
+    
     public Minesweeper(int size, int mines, int timeLimit, String playerName) {  // Konstruktor
         this.size = size;
         this.mines = mines;
@@ -45,224 +46,32 @@ public class Minesweeper {
         topPanel.add(livesLabel); // hinzufügen der panels zum definierten feld 
         topPanel.add(timerLabel); // hinzufügen der panels zum definierten feld 
         gameFrame.add(topPanel, BorderLayout.NORTH); // Panel zum gameframe hinzufügen
-
+        
+        
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new GridLayout(size, size)); // setzt das Spielfeld auf die Größe
         buttons = new JButton[size][size]; 
         cells = new Cell[size][size];
         revealed = new boolean[size][size];
         marked = new boolean[size][size];
-        initializeBoard(gamePanel); // initialisieren den Spielfelds
+        board = new Board(size, mines, 3, timerLabel, livesLabel, playerName); // Initialize the Board with 3 lives
+        board.initializeBoard(gamePanel); // Initialize board with buttons
+        board.placeMines(); // Place mines
+        board.calculateNumbers(); // Calculate numbers for the cells
+        board.startTimer(timeLimit);
+        /*initializeBoard(gamePanel); // initialisieren den Spielfelds
         placeMines(); // platzieren der Minen
         calculateNumbers(); // Zählt wieviele Minen ans Feld angrenzen
-        startTimer(); // Timer starten
+        startTimer(); // Timer starten*/
         gameFrame.add(gamePanel, BorderLayout.CENTER); 
         gameFrame.setSize(new Dimension(800, 800));;
         gameFrame.setLocationRelativeTo(null); // Center the window
         gameFrame.setVisible(true);
     }
 
-    private void initializeBoard(JPanel panel) { // initialisieren des grids/boards
-        for (int i = 0; i < size; i++) { // alle reihen
-            for (int j = 0; j < size; j++) { // alle spalten
-                JButton button = new JButton();  // button als Zelle 
-                button.setPreferredSize(new Dimension(CELL_SIZE, CELL_SIZE));
-                button.setBackground(Color.GRAY); 
-                button.setFocusPainted(false); 
-                int row = i;
-                int col = j;
-                button.addMouseListener(new MouseAdapter() { // wenn button geklickt, Zelle aufgedeckt
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        if (SwingUtilities.isLeftMouseButton(e)) {
-                            reveal(row, col);
-                        } else if (SwingUtilities.isRightMouseButton(e)) {
-                            mark(row, col);
-                        }
-                    }
-                });
-                panel.add(button); // button zu grid hinzufügen
-                buttons[i][j] = button; // ganzes Board mit buttons als zellen füllen 
-                cells[i][j] = new SafeCell(); // Default to SafeCell, mines will be placed later
-            }
-        }
-    }
 
-    private void placeMines() { // plaziert die minen auf das board
-        Random random = new Random();
-        int count = 0;
-        while (count < mines) { 
-            int x = random.nextInt(size); //random auswählen welches feld ne Mine wird 
-            int y = random.nextInt(size); //random auswählen welches feld ne Mine wird 
-            if (!cells[x][y].isMine()) { // abfragen ob Feld schon eine Mine ist, falls nicht Zelle zu Minenzelle machen und counter inkrementieren
-                cells[x][y] = new MineCell();
-                count++;
-            }
-        }
-    }
 
-    private void calculateNumbers() { // berechnen wie viele Minen an Feld angrenzen
-        for (int i = 0; i < size; i++) { // für alle Reihen
-            for (int j = 0; j < size; j++) { // für alle Spalten
-                if (!cells[i][j].isMine()) { // falls Zelle keine Mine 
-                    int count = countAdjacentMines(i, j); // abfragen wie viele Minen an Feld angrenzen
-                    ((SafeCell) cells[i][j]).setAdjacentMines(count); // Wert setzen 
-                }
-            }
-        }
-    }
-
-    private void reveal(int x, int y) { // Zelle aufdecken
-        if (revealed[x][y] || marked[x][y]) { // falls schon setzen nichts tun
-            return;
-        }
-        revealed[x][y] = true; // als aufgedeckt setzen
-        cells[x][y].reveal(buttons[x][y]); // Zelle aufdecken
-
-        if (cells[x][y].isMine()) { // falls die Zelle ne Mine ist leben abziehen
-            lives--;
-            livesLabel.setText("Lives: " + lives); // auf in label ändern
-            if (lives == 0) { 
-                gameOver();
-                return;
-            }
-        } else { // falle Zellen drum herum aufdecken, die auch keine Mine angrenzend haben
-            int count = countAdjacentMines(x, y); // abfragen wie viele Minen an Feld angrenzen
-            if (count == 0) { 
-                for (int dx = -1; dx <= 1; dx++) { // reihe 
-                    for (int dy = -1; dy <= 1; dy++) { // spalte
-                        int nx = x + dx; //alle Felder drumherum abfragen
-                        int ny = y + dy; //alle Felder drumherum abfragen
-                        if (nx >= 0 && nx < size && ny >= 0 && ny < size && !revealed[nx][ny]) { // wenn Zellen in board und keine Mine angrenzen
-                            reveal(nx, ny); // Zellen aufdecken
-                        }
-                    }
-                }
-            }
-        }
-
-        if (isGameWon()) {
-            gameWon();
-        }
-    }
-
-    private void mark(int x, int y) { // felder markieren 
-        if (revealed[x][y]) { // falls schon aufgedeckt nichts tun
-            return;
-        }
-        marked[x][y] = !marked[x][y]; // falls marked, nicht mehr marken
-        if (marked[x][y]) { // falls marked, icon setzen
-        	ImageIcon icon = new ImageIcon(getClass().getResource("images/flag.png")); // image aus imageordner
-        	Image img= icon.getImage().getScaledInstance(CELL_SIZE, CELL_SIZE, Image.SCALE_SMOOTH); // image scalen
-        	buttons[x][y].setIcon( new ImageIcon(img)); // icon setzen
-        } else {
-        buttons[x][y].setIcon(null); // icon aus Zelle entfernen
-        }
-    }
-
-    private int countAdjacentMines(int x, int y) { // anliegende Minen erkennen
-        int count = 0; 
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                int nx = x + dx; // anliegende Zellen prüfen
-                int ny = y + dy; // anliegende Zellen prüfen
-                if (nx >= 0 && nx < size && ny >= 0 && ny < size && cells[nx][ny].isMine()) { // falls anliegende Zelle Mine 
-                    count++;
-                }
-            }
-        }
-        return count; // ausgeben wieviele Minen sind 
-    }
-
-    private boolean isGameWon() { // checken ob Spiel gewonnen ist 
-        for (int i = 0; i < size; i++) { 
-            for (int j = 0; j < size; j++) {
-                if (!cells[i][j].isMine() && !revealed[i][j]) { // abfragen ob auf board Zellen die keine Minen sind nicht aufgedeckt sind
-                    return false; 
-                }
-            }
-        }
-        return true; // falls ganzes board aufgedeckt und Minen -> gewonnen
-    }
-
-    private void gameOver() { // abfragen ob spiel verloren und speichern des scores
-        timer.stop(); // timer stoppen
-        revealAllMines(); // alle Minen aufdecken
-        saveScore(); // Punktestand ins scoreboard speichern
-        Object[] options = {"Return to Menu", "Restart"}; // array mit Texten für buttons
-        int choice = JOptionPane.showOptionDialog(gameFrame, // Dialogfenster das über gameframe erscheint 
-                "Game Over! You have no lives left. What do you want to do?", 
-                "Game Over",
-                JOptionPane.YES_NO_OPTION, // Ja/nein buttons 
-                JOptionPane.PLAIN_MESSAGE, // Nachrichttyp nur Text  
-                null, // kein icon 
-                options, // Ja option(Return to menu)
-                options[0]); // Nein option (Restart)
-        if (choice == JOptionPane.YES_OPTION) { // falls ja spiel schließen und ins Menü
-            gameFrame.dispose();
-            showMenu();
-        } else if (choice == JOptionPane.NO_OPTION) { // falls nein alte game instanz schließen, neue erstellen
-            gameFrame.dispose();
-            new Minesweeper(size, mines, timeLimit, playerName);
-        }
-    }
-
-    private void gameWon() { // falls spiel gewonnen
-        timer.stop(); // timer stoppen
-        saveScore(); // Punktestand ins scoreboard speichern
-        Object[] options = {"Return to Menu", "Restart"}; // array mit Texten für buttons
-        int choice = JOptionPane.showOptionDialog(gameFrame, // Dialogfenster das über gameframe erscheint 
-                "Congratulations! You won! What do you want to do?",
-                "Congratulations",
-                JOptionPane.YES_NO_OPTION, // Ja/nein buttons
-                JOptionPane.PLAIN_MESSAGE, // Nachrichttyp nur Text 
-                null, // kein icon 
-                options, // Ja option(Return to menu)
-                options[0]); // Nein option (Restart)
-        if (choice == JOptionPane.YES_OPTION) { // falls ja spiel schließen und ins Menü
-            gameFrame.dispose();
-            showMenu();
-        } else if (choice == JOptionPane.NO_OPTION) { // falls nein alte game instanz schließen, neue erstellen
-            gameFrame.dispose();
-            new Minesweeper(size, mines, timeLimit, playerName);
-        }
-    }
-
-    private void startTimer() { // Timer starten 
-    	timeElapsed = timeLimit; // Startzeit setzen
-        timer = new Timer(1000, e -> { // jede Sekunde
-            timeElapsed--; // runterzählen
-            timerLabel.setText("Time: " + timeElapsed); // Label auf aktuellen Wert setzen
-            if (timeElapsed <= 0) { // falls Zeit abgelaufen game Over 
-                timer.stop();
-                gameOver();
-            }
-        });
-        timer.start(); // timer starten
-    }
-
-    private void revealAllMines() { // alle Zellen mit Minen aufdecken 
-        for (int i = 0; i < size; i++) { 
-            for (int j = 0; j < size; j++) { // für jede Zelle 
-                if (cells[i][j].isMine()) { // falls Zelle Mine ist 
-                    cells[i][j].reveal(buttons[i][j]); // Zelle aufdecken
-                }
-            }
-        }
-    }
-
-    private void saveScore() { // Punktestand in Scoreboard speichern 
-        int points = (timeLimit - timeElapsed) * lives; // Punkte berechnen 
-        List<Score> scores = Score.loadScores(); // liste von Punktenständen laden 
-        scores.add(new Score(playerName, points)); // Punktestand hinzufügen 
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(SCORE_FILE))) { // über Outputstream zu Datei herstellen
-            oos.writeObject(scores); // über Outputstream Datei schreiben 
-        } catch (IOException e) { // falls Fehler handlen und loggen 
-            e.printStackTrace(); 
-        }
-    }
-
-    private static void showMenu() { // Menü zeigen
+    public static void showMenu() { // Menü zeigen
         JFrame menuFrame = new JFrame("Minesweeper Menu"); // Frame für Menü erstellen
         menuFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE); // closed den Gameframe sobald man das Fenster schließt
         menuFrame.setLayout(new GridLayout(6, 2)); // Grid erstellen 
