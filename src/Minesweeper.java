@@ -8,35 +8,35 @@ import java.util.List;
 import java.util.Random;
 
 public class Minesweeper {
-    private static final int CELL_SIZE = 30;
-    private static final double EASY_MINE_PERCENTAGE = 0.1;
-    private static final double MEDIUM_MINE_PERCENTAGE = 0.15;
-    private static final double HARD_MINE_PERCENTAGE = 0.2;
-    private static final String SCORE_FILE = System.getProperty("user.home") + File.separator + "scores.dat";
+    private static final int CELL_SIZE = 30;  // Zellgröße in UI 
+    private static final double EASY_MINE_PERCENTAGE = 0.1; // Prozentsatz wie viele Felder Minen sind bei Schwierigkeit easy
+    private static final double MEDIUM_MINE_PERCENTAGE = 0.15; // Prozentsatz wie viele Felder Minen sind bei Schwierigkeit medium
+    private static final double HARD_MINE_PERCENTAGE = 0.2; // Prozentsatz wie viele Felder Minen sind bei Schwierigkeit hard
+    private static final String SCORE_FILE = System.getProperty("user.home") + File.separator + "scores.dat"; // Pfad zur Scorefile(zum speichern der scores)
 
-    private int size;
-    private int mines;
-    private int lives = 3;
-    private int timeLimit;
-    private JButton[][] buttons;
-    private Cell[][] cells;
-    private boolean[][] revealed;
-    private boolean[][] marked;
-    private Timer timer;
-    private int timeElapsed = 0;
-    private JLabel timerLabel;
-    private JLabel livesLabel;
-    private JFrame gameFrame;
-    private String playerName;
+    private int size; // Feldgröße
+    private int mines; // Anzahl der Minen
+    private int lives = 3; // Anzahl der Leben 
+    private int timeLimit; // Zeitlimit
+    private JButton[][] buttons; // swing button initialisierer (um buttons zu erstellen)
+    private Cell[][] cells; // swing Cell initialisierer (um Zellen abzufragen)
+    private boolean[][] revealed; // angeklickte Felder 
+    private boolean[][] marked; // markierte Felder 
+    private Timer timer; // initialisierung Timer 
+    private int timeElapsed = 0; // wieviel Zeit vergangen ist in Sekunden
+    private JLabel timerLabel; // Label für Timer initialisieren
+    private JLabel livesLabel; // Label für Leben initialisieren
+    private JFrame gameFrame; // gameFrame initialisieren(der Rahmen in dem die UI ist)
+    private String playerName; // Spielername
 
-    public Minesweeper(int size, int mines, int timeLimit, String playerName) {
+    public Minesweeper(int size, int mines, int timeLimit, String playerName) {  // Konstruktor
         this.size = size;
         this.mines = mines;
         this.timeLimit = timeLimit;
         this.playerName = playerName;
 
         gameFrame = new JFrame("Minesweeper");
-        gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  // closed den Gameframe sobald man das Fenster schließt
         gameFrame.setLayout(new BorderLayout());
 
         JPanel topPanel = new JPanel();
