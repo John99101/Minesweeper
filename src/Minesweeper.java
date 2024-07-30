@@ -37,29 +37,28 @@ public class Minesweeper {
 
         gameFrame = new JFrame("Minesweeper");
         gameFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  // closed den Gameframe sobald man das Fenster schließt
-        gameFrame.setLayout(new BorderLayout());
+        gameFrame.setLayout(new BorderLayout()); 
 
-        JPanel topPanel = new JPanel();
-        topPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10));
-        livesLabel = new JLabel("Lives: " + lives);
-        timerLabel = new JLabel("Time: " + timeElapsed);
-        topPanel.add(livesLabel);
-        topPanel.add(timerLabel);
-        gameFrame.add(topPanel, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(); 
+        topPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 20, 10)); // oberes Feld
+        livesLabel = new JLabel("Lives: " + lives); // Label für leben
+        timerLabel = new JLabel("Time: " + timeElapsed);  // Label für Zeit
+        topPanel.add(livesLabel); // hinzufügen der panels zum definierten feld 
+        topPanel.add(timerLabel); // hinzufügen der panels zum definierten feld 
+        gameFrame.add(topPanel, BorderLayout.NORTH); // Panel zum gameframe hinzufügen
 
         JPanel gamePanel = new JPanel();
-        gamePanel.setLayout(new GridLayout(size, size));
-        buttons = new JButton[size][size];
+        gamePanel.setLayout(new GridLayout(size, size)); // setzt das Spielfeld auf die Größe
+        buttons = new JButton[size][size]; 
         cells = new Cell[size][size];
         revealed = new boolean[size][size];
         marked = new boolean[size][size];
-        initializeBoard(gamePanel);
-        placeMines();
-        calculateNumbers();
-        startTimer();
-        gameFrame.add(gamePanel, BorderLayout.CENTER);
-
-        gameFrame.pack();
+        initializeBoard(gamePanel); // initialisieren den Spielfelds
+        placeMines(); // platzieren der Minen
+        calculateNumbers(); // Zählt wieviele Minen neben Feld
+        startTimer(); // Timer starten
+        gameFrame.add(gamePanel, BorderLayout.CENTER); 
+        gameFrame.setSize(new Dimension(800, 800));;
         gameFrame.setLocationRelativeTo(null); // Center the window
         gameFrame.setVisible(true);
     }
@@ -337,7 +336,7 @@ public class Minesweeper {
         menuFrame.add(startButton);
         menuFrame.add(scoreScrollPane); // Add the score display
 
-        menuFrame.pack();
+        menuFrame.setSize(new Dimension(400,400));
         menuFrame.setLocationRelativeTo(null);
         menuFrame.setVisible(true);
     }
