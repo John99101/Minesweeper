@@ -243,6 +243,6 @@ public class Board {
     private void showMenu() { // Menü zeigen
     	Minesweeper.gameFrame.dispose(); // altes Spiel schließen
 
-        Minesweeper.showMenu(); // Menü anzeigen
+        Menu.showMenu(); // Menü anzeigen
     }
 }
