@@ -3,7 +3,6 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -152,7 +151,13 @@ public class Minesweeper {
             return;
         }
         marked[x][y] = !marked[x][y];
-        buttons[x][y].setText(marked[x][y] ? "M" : "");
+        if (marked[x][y]) {
+        	ImageIcon icon = new ImageIcon(getClass().getResource("images/flag.png"));
+        	Image img= icon.getImage().getScaledInstance(CELL_SIZE, CELL_SIZE, Image.SCALE_SMOOTH);
+        	buttons[x][y].setIcon( new ImageIcon(img));
+        } else {
+        buttons[x][y].setIcon(null);
+        }
     }
 
     private int countAdjacentMines(int x, int y) {
@@ -224,10 +229,11 @@ public class Minesweeper {
     }
 
     private void startTimer() {
+    	timeElapsed = timeLimit;
         timer = new Timer(1000, e -> {
-            timeElapsed++;
+            timeElapsed--;
             timerLabel.setText("Time: " + timeElapsed);
-            if (timeElapsed >= timeLimit) {
+            if (timeElapsed <= 0) {
                 timer.stop();
                 gameOver();
             }

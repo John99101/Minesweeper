@@ -17,6 +17,7 @@ class SafeCell extends Cell {
         super.reveal(button);
         if (!isMine() && isRevealed()) {
             button.setBackground(Color.WHITE);
+            button.setIcon(null);
             if (adjacentMines > 0) {
                 button.setText(Integer.toString(adjacentMines));
                 button.setForeground(Color.BLUE); // Set text color to blue
@@ -25,4 +26,9 @@ class SafeCell extends Cell {
             }
         }
     }
+
+	public int getAdjacentMines() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }
