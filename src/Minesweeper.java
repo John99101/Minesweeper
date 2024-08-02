@@ -44,14 +44,13 @@ public class Minesweeper {
         topPanel.add(timerLabel); // hinzufügen der panels zum definierten feld 
         gameFrame.add(topPanel, BorderLayout.NORTH); // Panel zum gameframe hinzufügen
         
-        
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new GridLayout(size, size)); // setzt das Spielfeld auf die Größe
         buttons = new JButton[size][size];  
         cells = new Cell[size][size];
         revealed = new boolean[size][size];
         marked = new boolean[size][size];
-        board = new Board(size, mines, 3, timerLabel, livesLabel, playerName); // Initialize the Board with 3 lives
+        board = new Board(size, mines, 3, timeLimit, timerLabel, livesLabel, playerName); // Initialize the Board with 3 lives and time limit
         board.initializeBoard(gamePanel); // Initialize board with buttons
         board.placeMines(); // Place mines
         board.calculateNumbers(); // Calculate numbers for the cells

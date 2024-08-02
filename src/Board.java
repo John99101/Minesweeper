@@ -13,6 +13,7 @@ public class Board {
     private int size;
     private int mines;
     private int lives;
+    private int timeLimit; // Hinzufügen des timeLimit-Attributs
     private JButton[][] buttons;
     private Cell[][] cells;
     private boolean[][] revealed;
@@ -23,10 +24,11 @@ public class Board {
     private JLabel livesLabel;
     private String playerName;
 
-    public Board(int size, int mines, int lives, JLabel timerLabel, JLabel livesLabel, String playerName) {
+    public Board(int size, int mines, int lives, int timeLimit, JLabel timerLabel, JLabel livesLabel, String playerName) {
         this.size = size;
         this.mines = mines;
         this.lives = lives;
+        this.timeLimit = timeLimit; // Initialisieren des timeLimit
         this.timerLabel = timerLabel;
         this.livesLabel = livesLabel;
         this.playerName = playerName;
@@ -162,8 +164,10 @@ public class Board {
     }
 
 
-    private void gameOver() { // abfragen ob spiel verloren und speichern des scores
-        timer.stop(); // timer stoppen
+    private void gameOver() {
+        if (timer != null) {
+            timer.stop(); // Timer stoppen
+        }
         revealAllMines(); // alle Minen aufdecken
         saveScore(); // Punktestand speichern
         Object[] options = {"Return to Menu", "Restart"};
@@ -183,7 +187,9 @@ public class Board {
     }
 
     private void gameWon() {
-    	timer.stop(); // timer stoppen
+        if (timer != null) {
+            timer.stop(); // Timer stoppen
+        }
         saveScore(); // Punktestand ins scoreboard speichern
         Object[] options = {"Return to Menu", "Restart"}; // array mit Texten für buttons
         int choice = JOptionPane.showOptionDialog(null, // das selbe wie in gameOver, nur mit anderem Text
@@ -201,8 +207,11 @@ public class Board {
         }
     }
 
-    public void startTimer(int timeLimit) { // Timer starten
+    public void startTimer(int timeLimit) {
         timeElapsed = timeLimit; // Startzeit setzen
+        if (timer != null) {
+            timer.stop(); // Vorherigen Timer stoppen, falls vorhanden
+        }
         timer = new Timer(1000, e -> { // jede Sekunde
             timeElapsed--; // dekrementieren
             timerLabel.setText("Time: " + timeElapsed); // Label auf aktuelle Zeit setzen
@@ -235,9 +244,12 @@ public class Board {
         }
     }
 
-    private void restartGame() { // Spiel neu Starten
-    	Minesweeper.gameFrame.dispose(); // altes spiel schließen
-        new Minesweeper(size, mines, timeElapsed, playerName); // neues Spiel erstellen
+    private void restartGame() {
+        if (timer != null) {
+            timer.stop(); // Vorherigen Timer stoppen
+        }
+        Minesweeper.gameFrame.dispose(); // altes spiel schließen
+        new Minesweeper(size, mines, timeLimit, playerName); // neues Spiel erstellen
     }
 
     private void showMenu() { // Menü zeigen
